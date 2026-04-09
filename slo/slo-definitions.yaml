@@ -1,0 +1,102 @@
+# SLO Definitions
+# Format: service → SLO type → target + measurement window
+# Error budgets are calculated from monthly targets (30-day rolling window)
+
+slos:
+  # Core API Gateway (public-facing)
+  - service: api-gateway
+    slos:
+      - name: availability
+        description: Percentage of requests that return non-5xx response
+        target: 99.9%
+        measurement_window: 30d
+        metric:
+          numerator: requests_total{status!~"5.."}
+          denominator: requests_total
+        alert_burn_rates:
+          - burn_rate: 14.4x  # consumes 5% budget in 1 hour → page immediately
+            severity: P1       # P1 = S1: full outage response
+            notify: [oncall, engineering_manager]
+          - burn_rate: 6x     # consumes 5% budget in 6 hours → investigate
+            severity: P2       # P2 = S2: degraded service response
+            notify: [oncall]
+
+# Severity mapping (P-levels used in alerts; S-levels used in incident templates):
+# P1 = S1 (full outage), P2 = S2 (major degradation), P3 = S3 (minor, no user impact)
+
+      - name: latency_p99
+        description: 99th percentile request latency
+        target: < 2000ms
+        measurement_window: 30d
+
+  # Email delivery (Owlery)
+  - service: owlery-email
+    slos:
+      - name: delivery_success_rate
+        description: Percentage of outbound emails successfully accepted by MTA
+        target: 99.5%
+        measurement_window: 30d
+        error_budget_minutes: 216    # 3.6 hours/month
+        alert_burn_rates:
+          - burn_rate: 14.4x
+            severity: P2
+            notify: [oncall]
+
+  # LLM Orchestrator (async, latency SLO is looser)
+  - service: llm-orchestrator
+    slos:
+      - name: availability
+        target: 99.5%
+        measurement_window: 30d
+        error_budget_minutes: 216    # 3.6 hours/month
+
+      - name: inference_latency_p95
+        description: 95th percentile time from prompt submission to first token
+        target: < 5000ms
+        measurement_window: 30d
+
+  # Kafka Consumer Pipeline
+  - service: llm-consumer-pipeline
+    slos:
+      - name: consumer_lag
+        description: Consumer lag stays below threshold
+        target: lag < 5000 messages
+        measurement_window: 1h
+        alert_threshold: 10000   # P2 alert
+
+      - name: message_processing_latency
+        description: P95 time from message produce to consume
+        target: < 30s
+        measurement_window: 1h
+
+  # ClickHouse Analytics (GKE StatefulSet)
+  - service: clickhouse
+    slos:
+      - name: availability
+        target: 99.5%
+        measurement_window: 30d
+
+      - name: query_latency_p95
+        description: 95th percentile analytical query latency
+        target: < 10s
+        measurement_window: 1d
+
+  # RDS MySQL
+  - service: rds-mysql-prd
+    slos:
+      - name: availability
+        target: 99.95%
+        measurement_window: 30d
+        error_budget_minutes: 21.6   # ~21 minutes/month
+
+      - name: connection_headroom
+        description: Available connections > 20% of max at all times
+        target: 80% max_connections utilization threshold
+        measurement_window: 5m
+        alert_threshold: 90%
+
+# Error budget policy summary
+error_budget_policy:
+  p1_incidents_halt_features: true    # P1 incident → feature work stops until budget restored
+  budget_burned_30pct: "review SLO target or reliability investment"
+  budget_burned_100pct: "feature freeze until budget restored"
