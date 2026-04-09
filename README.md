@@ -3,8 +3,6 @@
 
 ![SRE](https://img.shields.io/badge/SRE-7B42BC?style=flat) ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white) ![Incident Response](https://img.shields.io/badge/Incident%20Response-EF7B4D?style=flat)
 
-![SRE](https://img.shields.io/badge/SRE-7B42BC?style=flat) ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white) ![Incident Response](https://img.shields.io/badge/Incident%20Response-EF7B4D?style=flat)
-
 Production incident response runbooks, postmortem templates, and SLO definitions for a B2B SaaS platform running 37 ECS services + 23 GKE workloads.
 
 > These runbooks are derived from real incidents. Service names are sanitized.
